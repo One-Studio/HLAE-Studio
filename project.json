@@ -1,0 +1,25 @@
+{
+ "name": "HLAE-Studio",
+ "description": "Enter your project description",
+ "author": {
+  "name": "Purp1e",
+  "email": "438518244@qq.com"
+ },
+ "version": "0.1.0",
+ "binaryname": "HLAE-Studio",
+ "frontend": {
+  "dir": "frontend",
+  "install": "npm install",
+  "build": "npm run build",
+  "bridge": "src",
+  "serve": "npm run serve"
+ },
+ "tags": "",
+ "WailsVersion": "",
+ "CrossCompile": false,
+ "Platform": "",
+ "Architecture": "",
+ "LdFlags": "",
+ "GoPath": "",
+ "UseFirebug": false
+}
