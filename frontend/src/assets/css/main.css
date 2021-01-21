@@ -3,19 +3,21 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #eee;
-  margin-top: 60px;
+  background-color: #f1f1f1;
+  height: 100%;
+  width: 100%;
+  margin:0;
+  padding:0;
 }
 
 html {
   height: 100%;
   overflow: hidden;
-  background-color: #131313;
-  background-size: 20px 20px;
 }
 
-.logo {
-  width: 16em;
+head body {
+  margin:0;
+  padding:0;
 }
 
 /* roboto-regular - latin */
