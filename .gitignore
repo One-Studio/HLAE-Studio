@@ -1,9 +1,9 @@
 
 */.DS_Store
 .DS_Store
-/build/One-Encoder.exe
-/build/One-Encoder
-/build/One-Encoder.app
+/build/HLAE-Studio.exe
+/build/HLAE-Studio
+/build/HLAE-Studio.app
 /packed/mac/
 /packed/linux/
 /packed/windows/
@@ -11,9 +11,9 @@
 !build
 
 # 排除win打包生成的中间文件
-One-Encoder.ico
-One-Encoder.exe.manifest
-One-Encoder-res.syso
-One-Encoder.rc
+HLAE-Studio.ico
+HLAE-Studio.exe.manifest
+HLAE-Studio-res.syso
+HLAE-Studio.rc
 info.plist
 /build/
