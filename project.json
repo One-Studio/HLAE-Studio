@@ -9,10 +9,10 @@
  "binaryname": "HLAE-Studio",
  "frontend": {
   "dir": "frontend",
-  "install": "npm install",
-  "build": "npm run build",
+  "install": "yarn install",
+  "build": "yarn build",
   "bridge": "src",
-  "serve": "npm run serve"
+  "serve": "yarn serve"
  },
  "tags": "",
  "WailsVersion": "",
