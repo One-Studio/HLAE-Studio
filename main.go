@@ -13,9 +13,9 @@ func main() {
 
   //创建app 设定宽高标题颜色和是否锁定长宽
   app := wails.CreateApp(&wails.AppConfig{
-    Width:  400,
-    Height: 650,
-    Title:  "HLAE-Studio",
+    Width:  350,
+    Height: 525,  //windows标题栏40px 总宽度566.34px
+    Title:  "HLAE Studio",
     JS:     js,
     CSS:    css,
     Colour: "#131313",
