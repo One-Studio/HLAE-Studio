@@ -53,7 +53,7 @@ export default {
 .app-title {
   font-size: 11vw;
   margin: auto;
-  text-shadow: 0.5vw 1.75vw 2vw rgba(0,0,0,0.25);
+  text-shadow: 0.5vw 1.75vw 1.5vw rgba(0,0,0,0.2);
 }
 
 /*应用版本号*/
