@@ -4,35 +4,68 @@
       <img alt="Wails logo" src="../assets/images/logo.png" class="logo">
     </div>
     <div class="app-title">HLAE Studio</div>
-    <div class="app-version">
-      Testify <span class="version">v1.0.1</span>
+    <div class="version-area">
+      {{ versionCode }} <span class="app-version">{{ appVersion }}</span>
     </div>
-    <a-progress
-        type="circle"
-        width="15vw"
-        :stroke-color="{
-          '0%': '#108ee9',
-          '100%': '#87d068',
-        }"
-        :percent="66"
-        status="active"
-        style="margin-top: 0vw;font-size: 4vw;"
-    />
-    <br>
-    <div class="log-area">
-      正在检查hlae版本号...
+    <div class="p-status" >
+      <a-progress type="circle" :percent="progress" width="18vw"
+                  :strokeColor="{
+                    '0%': '#108ee9',
+                    '100%': '#87d068',
+                    // '0%': '#9370DB',
+                    // '100%': '#C71585',
+                  //  自定主题后修改成功色，现在成功的时候很丑 @success-color: #52c41a;
+                  }"
+                  style="font-size: 4vw"
+      />
+<!--          <a-spin><a-icon slot="indicator" type="loading" style="font-size: 20vw;color: mediumpurple" spin/> </a-spin>-->
+<!--      <a-icon type="check-circle" theme="twoTone" two-tone-color="#1ac41a" style="font-size: 12vw"/>-->
+    </div>
+    <div class="log-area" >
+      {{ log }}
     </div>
     <div class="btn-control">
-      <a-button class="btn" size="large"><a-icon type="setting" /></a-button>
-      <a-button class="btn" size="large"><a-icon type="folder-open" /></a-button>
-      <a-button class="btn" style="margin-right: 0;width: 36vw;font-size: 4.5vw;" size="large">打开HLAE</a-button>
+      <a-button class="btn" size="large" @click="tabSetting"><a-icon type="setting" /></a-button>
+      <a-button class="btn" size="large" @click="openDirHLAE"><a-icon type="folder-open" /></a-button>
+      <a-button class="btn" @click="launchHLAE" style="margin-right: 0;width: 36vw;font-size: 4.5vw;" size="large">打开HLAE</a-button>
     </div>
   </div>
 </template>
 
 <script>
+import Wails from '@wailsapp/runtime';
+
 export default {
-  name: "Main"
+  name: "Main",
+  data() {
+    return {
+      versionCode: "Testify",
+      appVersion: "v0.0.1",
+      progress: 0,
+      log: "",
+    };
+  },
+  mounted() {
+    Wails.Events.On("SetProcessBar", (progress) => {
+      this.progress = progress;
+    });
+    this.checkUpdate();
+  },
+  methods: {
+    launchHLAE () {
+      console.log("启动HLAE");
+
+    },
+    tabSetting () {
+      console.log("切换到设置Tab页");
+    },
+    openDirHLAE () {
+      console.log("打开HLAE安装位置");
+    },
+    checkUpdate () {
+      console.log("检查HLAE更新");
+    }
+  }
 }
 </script>
 
@@ -57,7 +90,8 @@ export default {
 }
 
 /*应用版本号*/
-.app-version {
+.version-area {
+  text-align:center;
   font-size: 6.75vw;
   font-weight: lighter;
   margin-bottom: 4.5vw;
@@ -65,7 +99,8 @@ export default {
 }
 
 /*数字版本号*/
-.version {
+.app-version {
+  text-align:center;
   font-size: 5vw;
 }
 
@@ -80,15 +115,30 @@ export default {
   /*box-shadow: 1vw 1vw 1vw gray;TODO*/
 }
 
+/*状态区域*/
+.p-status {
+  height: 18vw;
+  margin: 2vw auto;
+}
+
 /*日志区域*/
 .log-area {
-  margin-top: 2.5vw;
+  margin: 2vw auto 0;
+  /*padding: 1vw;*/
   font-size: 3.5vw;
+  width: 61.8vw;
+  text-align:center;
+  height: 5vw;
+  /*background-color: gray;*/
+  white-space: nowrap;   /*这是重点。文本换行*/
+  /*text-overflow: clip;*/
+  overflow: hidden;
+  text-overflow:ellipsis;
 }
 
 /*按钮控制区域*/
 .btn-control {
-  margin: 6.25vw;
+  margin: 5.25vw;
   /*padding: 4vw;*/
 }
 
