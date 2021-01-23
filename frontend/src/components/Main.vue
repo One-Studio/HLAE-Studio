@@ -46,24 +46,42 @@ export default {
     };
   },
   mounted() {
-    Wails.Events.On("SetProcessBar", (progress) => {
+    //data多了之后改用解析Json形式赋值
+    Wails.Events.On("SetProgess", (progress) => {
       this.progress = progress;
+    });
+    Wails.Events.On("SetLog", (log) => {
+      this.log = log;
+    });
+    Wails.Events.On("SetVersionCode", (versionCode) => {
+      this.versionCode = versionCode;
+    });
+    Wails.Events.On("SetAppVersion", (appVersion) => {
+      this.appVersion = appVersion;
     });
     this.checkUpdate();
   },
   methods: {
     launchHLAE () {
-      console.log("启动HLAE");
-
+      // console.log("启动HLAE");
+      window.backend.App.LaunchHLAE();
     },
     tabSetting () {
-      console.log("切换到设置Tab页");
+      console.log("切换到设置Tab页"); //TODO
     },
     openDirHLAE () {
-      console.log("打开HLAE安装位置");
+      // console.log("打开HLAE安装位置");
+      window.backend.App.OpenHlaeDirectory();
+      //发送wails信息->Go?
+      // window.wails.Events.Emit("error", "这是一条错误信息！");
+    },
+    checkState () {
+      // console.log("检查HLAE更新");
+      window.backend.App.CheckState();
     },
     checkUpdate () {
-      console.log("检查HLAE更新");
+      // console.log("检查HLAE更新");
+      window.backend.App.CheckUpdate();
     }
   }
 }

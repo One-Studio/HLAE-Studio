@@ -1,16 +1,16 @@
 package config
 
 var defaultCFG = CFG{
-	version: "0.0.1",
-	srcPath: "",
-	dstPath: "",
-	param:   "-vcodec libx264 -preset slower -crf 17",
-	api: API{
-		win:   "https://cdn.jsdelivr.net/gh/One-Studio/FFmpeg-Win64@master/api.json",
-		mac:   "https://cdn.jsdelivr.net/gh/One-Studio/FFmpeg-Mac-master@master/api.json",
-		linux: "https://cdn.jsdelivr.net/gh/One-Studio/FFmpeg-Linux64-master@master/api.json",
-	},
-	ffmpegPath:    "ffmpeg",
-	ffmpegRegExp:  "",
-	ffmpegVersion: "",
+	VersionCode:   "Testify",
+	AppVersion:    "v0.0.1",
+	HlaeVersion:   "",
+	FFmpegVersion: "",
+	HlaeAPI:       "https://api.github.com/repos/advancedfx/advancedfx/releases/latest",
+	HlaeCdnAPI:    "https://cdn.jsdelivr.net/gh/One-Studio/HLAE-Archive@master",
+	FFmpegAPI:     "https://www.gyan.dev/ffmpeg/builds/release-version", // builds/ffmpeg-release-essentials.7z
+	FFmpegCdnAPI:  "https://cdn.jsdelivr.net/gh/One-Studio/FFmpeg-Win64@master",
+	HlaePath:      "",
+	Init:          false,
+	HlaeState:     false,
+	FFmpegState:   false,
 }

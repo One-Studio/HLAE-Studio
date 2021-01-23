@@ -13,7 +13,18 @@ func (a *App) SayHello() string {
 }
 
 //设置进度条 需要前端Mount
-func (a *App) setProgressBar(percent int) {
-	a.runtime.Events.Emit("SetProcessBar", percent)
+func (a *App) setProgress(percent int) {
+	a.runtime.Events.Emit("SetProgess", percent)
 }
 
+func (a *App) setLog(log string) {
+	a.runtime.Events.Emit("SetLog", log)
+}
+
+func (a *App) setVersionCode(versionCode string) {
+	a.runtime.Events.Emit("SetVersionCode", versionCode)
+}
+
+func (a *App) setAppVersion(appVersion string) {
+	a.runtime.Events.Emit("SetAppVersion", appVersion)
+}

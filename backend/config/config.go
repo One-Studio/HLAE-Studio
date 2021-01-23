@@ -4,44 +4,26 @@ import (
 	"HLAE-Studio/backend/tool"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
-type API struct {
-	win   string
-	mac   string
-	linux string
-}
-
 type CFG struct {
-	version       string
-	srcPath       string
-	dstPath       string
-	param         string
-	api           API
-	ffmpegPath    string
-	ffmpegVersion string
-	ffmpegRegExp  string
-	Init		  bool
+	VersionCode   string //大版本代号
+	AppVersion    string //app程序版本
+	HlaeVersion   string //hlae版本
+	FFmpegVersion string //ffmpeg版本
+	HlaeAPI       string //hlae 版本号+下载地址等 API
+	HlaeCdnAPI    string //hlae CDN镜像 API
+	FFmpegAPI     string //ffmpeg 版本号+下载地址等 API
+	FFmpegCdnAPI  string //ffmpeg CDN镜像 API
+	HlaePath      string //hlae安装位置
+	Init          bool	 //程序当前状态 是否已初始化
+	HlaeState     bool	//hlae安装状态
+	FFmpegState   bool	//ffmpeg安装状态
 }
 
-func ReadConfig(cfg CFG) {
-	fmt.Println("hello")
-	//读取操作 TODO
-	cfg = defaultCFG
-	//程序设置初始化到前端
-	
-	fmt.Println(cfg)
-}
-
-func SaveConfig(cfg CFG) {
-	fmt.Println(cfg)
-	//保存操作 TODO
-
-}
-
-func readCFGs(path string) (CFG, error) {
+//读设置
+func ReadConfig(path string) (CFG, error) {
 	//检查文件是否存在
 	exist, err := tool.IsFileExisted(path)
 	if err != nil {
@@ -60,17 +42,25 @@ func readCFGs(path string) (CFG, error) {
 			return CFG{}, err
 		}
 
+		//检查现有设置，做一定语法上的修正，处理版本更新带来的设置选项的变化
+		CFGInst, err = checkConfig(CFGInst)
+		if err != nil {
+			return CFG{}, err
+		}
+
 		return CFGInst, nil
 	} else {
-
-		return CFG{}, nil
+		//设置文件不存在则初始化
+		return defaultCFG, nil
 	}
 }
 
-func saveCFGs(cfg CFG,path string) error {
+//写设置
+func SaveConfig(cfg CFG, path string) error {
 	//检查文件是否存在
 	exist, err := tool.IsFileExisted(path)
 	if err != nil {
+		//路径等错误，返回err
 		return err
 	} else if exist == true {
 		//存在则删除文件
@@ -85,20 +75,36 @@ func saveCFGs(cfg CFG,path string) error {
 		}
 	}
 
-	JsonData, err := json.Marshal(cfg) //第二个参数要地址传递
-	if err != nil {
-		return err
-	}
-
-	//json.Indent(JsonData, )
-	var str bytes.Buffer
-	_ = json.Indent(&str, JsonData, "", "    ")
-	//fmt.Println("formated: ", str.String())
-
-	err = tool.WriteFast(path, str.String())
+	JsonData, err := Config2Json(cfg)
+	err = tool.WriteFast(path, JsonData)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+//设置转Json字符串
+func Config2Json(cfg CFG) (string, error) {
+	JsonData, err := json.Marshal(cfg) //第二个参数要地址传递
+	if err != nil {
+		return "", err
+	}
+
+	//json写入文件
+	var str bytes.Buffer
+	_ = json.Indent(&str, JsonData, "", "    ")
+	return str.String(), nil
+}
+
+//检查设置，更新覆盖部分设置
+func checkConfig(cfg CFG) (CFG, error) {
+	cfg.VersionCode = defaultCFG.VersionCode
+	cfg.AppVersion = defaultCFG.AppVersion
+	cfg.HlaeAPI = defaultCFG.HlaeAPI
+	cfg.HlaeCdnAPI = defaultCFG.HlaeCdnAPI
+	cfg.FFmpegAPI = defaultCFG.FFmpegAPI
+	cfg.FFmpegCdnAPI = defaultCFG.FFmpegCdnAPI
+
+	return cfg, nil
 }

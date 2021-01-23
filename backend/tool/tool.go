@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"unicode"
@@ -127,4 +129,19 @@ func IsChinese(str string) bool {
 func CheckFFmpeg() bool {
 
 	return false
+}
+
+//执行一次command指令
+func Cmd(command string) (string, error) {
+	var out []byte
+	var err error
+	if runtime.GOOS == "windows" {
+		c := exec.Command("cmd.exe", "/c", command)
+		out, err = c.CombinedOutput()
+	} else {
+		c := exec.Command("/bin/bash", "-c", command)
+		out, err = c.CombinedOutput()
+	}
+	//cmd.Args = a
+	return string(out), err
 }
