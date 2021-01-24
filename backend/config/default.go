@@ -2,7 +2,7 @@ package config
 
 var defaultCFG = CFG{
 	VersionCode:   "Testify",
-	AppVersion:    "v0.0.2",
+	AppVersion:    "v0.0.4",
 	HlaeVersion:   "",
 	FFmpegVersion: "",
 	HlaeAPI:       "https://api.github.com/repos/advancedfx/advancedfx/releases/latest",

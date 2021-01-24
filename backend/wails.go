@@ -43,14 +43,15 @@ func (a *App) doSelectOption() {
 func (a *App) noticeSuccess(msg string) {
 	a.runtime.Events.Emit("NoticeSuccess", msg)
 }
+
 func (a *App) noticeError(msg string) {
 	a.runtime.Events.Emit("NoticeError", msg)
 }
+
 func (a *App) noticeWarning(msg string) {
 	a.runtime.Events.Emit("NoticeWarning", msg)
 }
 
-//
 func (a *App) SelectDirectory() string {
 	directory := a.runtime.Dialog.SelectDirectory()
 	if ok, err := tool.IsFileExisted(directory); err != nil || !ok {

@@ -54,6 +54,11 @@ func (a *App) WailsShutdown() {
 //检查更新
 func (a *App) CheckUpdate() {
 	var err error
+	//我更新我自己
+	if err = a.updateApp(); err != nil {
+		a.noticeError(err.Error())
+	}
+
 	//检查是否初始化，否则通知前端选择安装方式和位置
 	if a.cfg.Init == false {
 		a.doSelectOption()
@@ -110,7 +115,13 @@ func (a *App) checkState() error {
 		} else if ok == true {
 			a.cfg.HlaeState = true
 			//解析修正本地hlae版本号
-			if tVersion, err := api.ParseChangelog(a.cfg.HlaePath + "/changelog.xml"); err != nil {
+			changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml")
+			if err != nil {
+				a.noticeError("读取本地版本号失败: " + err.Error())
+				return err
+			}
+			if tVersion, err := api.ParseChangelog(changelog); err != nil {
+				a.noticeError("解析本地版本号失败: " + err.Error())
 				return err
 			} else {
 				a.cfg.HlaeVersion = tVersion
@@ -137,6 +148,12 @@ func (a *App) checkState() error {
 		a.cfg.HlaePath = ""
 		a.cfg.Init = false
 	}
+
+	return nil
+}
+
+//TODO 我更新我自己
+func (a *App) updateApp() error {
 
 	return nil
 }
@@ -580,10 +597,6 @@ func (a *App) updateFFmpeg() error {
 		_, cdnFilename = filepath.Split(cdnURL)
 	}
 
-	//对比版本号，决定是否更新
-	if version == a.cfg.FFmpegVersion {
-		return nil
-	}
 	//决定下载的文件
 	if srcVersion == "" && cdnVersion == "" {
 		return errors.New("FFmpeg官方和CDN的API均获取或解析失败")
@@ -602,6 +615,12 @@ func (a *App) updateFFmpeg() error {
 		version = srcVersion
 		url = srcURL
 		filename = srcFilename
+	}
+
+	//对比版本号，决定是否更新
+	//a.noticeWarning(version + " ? " + a.cfg.FFmpegVersion)
+	if version == a.cfg.FFmpegVersion {
+		return nil
 	}
 
 	i += 100
@@ -651,14 +670,10 @@ func (a *App) updateFFmpeg() error {
 //启动HLAE
 func (a *App) LaunchHLAE() bool {
 	if a.cfg.HlaeState == true {
-		out, err := tool.Cmd("start " + a.cfg.HlaePath + "/hlae.exe")
-		if err != nil {
-			a.setLog(out)
-			log.Println(out, err)
-			return false
-		}
+		_ = a.runtime.Browser.OpenFile(a.cfg.HlaePath + "/hlae.exe")
 	}
-	return false
+
+	return true
 }
 
 //打开HLAE文件夹
