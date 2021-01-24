@@ -1,11 +1,19 @@
 package backend
 
 import (
+	"HLAE-Studio/backend/api"
 	"HLAE-Studio/backend/config"
 	"HLAE-Studio/backend/tool"
+	"errors"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/wailsapp/wails"
 	"log"
+	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
+	"github.com/otiai10/copy"
 )
 
 ///// app.go 存放backend包与frontend交互的大部分操作
@@ -37,25 +45,59 @@ func (a *App) WailsInit(runtime *wails.Runtime) error {
 func (a *App) WailsShutdown() {
 	//结束前：
 	fmt.Println("Wails结束")
-	err := config.SaveConfig(a.cfg,"./config.json")
+	err := config.SaveConfig(a.cfg, "./config.json")
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 //检查更新
-func (a *App) CheckUpdate() error {
+func (a *App) CheckUpdate() {
+	var err error
+	//检查是否初始化，否则通知前端选择安装方式和位置
+	if a.cfg.Init == false {
+		a.doSelectOption()
+		return
+	}
+
 	//检查HLAE和FFmpeg安装情况
-	if err := a.checkState(); err != nil {
+	if err = a.checkState(); err != nil {
 		a.runtime.Events.Emit("SetLog", err)
 		log.Println(err)
-		return err
+		return
 	}
-	//TODO
 
+	//安装或者更新HLAE
+	if a.cfg.HlaeState == false {
+		err = a.installHLAE()
+	} else {
+		err = a.updateHLAE()
+	}
+	if err != nil {
+		log.Println(err)
+		a.setLog(err.Error())
+		return
+	}
 
+	//安装或更新FFmpeg
+	if a.cfg.FFmpegState == false {
+		err = a.installFFmpeg()
+	} else {
+		err = a.updateFFmpeg()
+	}
+	if err != nil {
+		log.Println(err)
+		a.setLog(err.Error())
+		return
+	}
 
-	return nil
+	a.setProgress(100)
+	a.setLog("当前是最新版本")
+	a.noticeSuccess("已经更新到最新版本")
+	a.cfg.Init = true
+	a.cfg.HlaeState = true
+	a.cfg.FFmpegState = true
+	return
 }
 
 //检查HLAE和FFmpeg安装情况
@@ -67,105 +109,566 @@ func (a *App) checkState() error {
 			return err
 		} else if ok == true {
 			a.cfg.HlaeState = true
+			//解析修正本地hlae版本号
+			if tVersion, err := api.ParseChangelog(a.cfg.HlaePath + "/changelog.xml"); err != nil {
+				return err
+			} else {
+				a.cfg.HlaeVersion = tVersion
+			}
+			//检查ffmpeg
+			if ok, err := tool.IsFileExisted(a.cfg.HlaePath + "/ffmpeg/bin/ffmpeg.exe"); err != nil {
+				return err
+			} else if ok == true {
+				a.cfg.FFmpegState = true
+			} else {
+				a.cfg.FFmpegState = false
+				a.cfg.Init = false
+			}
 		} else {
 			a.cfg.HlaeState = false
-		}
-		//检查ffmpeg
-		if ok, err := tool.IsFileExisted(a.cfg.HlaePath + "/ffmpeg/bin/ffmpeg.exe"); err != nil {
-			return err
-		} else if ok == true {
-			a.cfg.FFmpegState = true
-		} else {
 			a.cfg.FFmpegState = false
+			a.cfg.HlaePath = ""
+			a.cfg.Init = false
 		}
 	} else {
-		//否则直接给定false开始安装hlae+ffmpeg
+		//否则直接给定false
 		a.cfg.HlaeState = false
 		a.cfg.FFmpegState = false
-		if err := a.selectOption(); err != nil {
-			return err
-		}
-		if err := a.installHLAE(); err != nil {
-			return err
-		}
-		if err := a.installFFmpeg(); err != nil {
-			return err
-		}
+		a.cfg.HlaePath = ""
+		a.cfg.Init = false
 	}
 
 	return nil
 }
 
-//TODO 选择安装hlae的方式
-func (a *App) selectOption() error {
-
-	return nil
+//设定安装hlae的方式
+func (a *App) SetOption(ok bool) {
+	a.cfg.Standalone = ok
+	a.cfg.Init = true
 }
 
-//安装HLAE TODO
+//安装HLAE
 func (a *App) installHLAE() error {
+	//选择安装位置
+	if a.cfg.Standalone == true {
+		a.noticeWarning("请选择安装位置，或者已有hlae.exe的文件夹")
+		//time.Sleep(2 * time.Second)
+		path := a.SelectDirectory()
+		if path == "" {
+			a.noticeWarning("已取消安装")
+			_ = tool.WriteFast("./cancel.txt", "取消安装")
+			return nil
+		}
+
+		//识别已安装hlae，则检查更新
+		if ok, _ := tool.IsFileExisted(path + "/hlae.exe"); ok {
+			a.cfg.HlaePath = tool.FormatPath(path)
+			if err := a.updateHLAE(); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		//新装hlae
+		a.cfg.HlaePath = tool.FormatPath(path)
+
+	} else {
+		//检查CSGO Demos Manager是否安装 "%HOMEDIR%/AppData/Local/AkiVer/"
+		usr, err := user.Current()
+		if err != nil {
+			return err
+		}
+		if ok, err := tool.IsFileExisted(usr.HomeDir + "/AppData/Local/AkiVer/"); err != nil || !ok {
+			//Manager未安装  提示安装且弹出下载的网页
+			if err := a.runtime.Browser.OpenURL("https://github.com/akiver/CSGO-Demos-Manager/releases/latest"); err != nil {
+				return err
+			}
+			if err := a.runtime.Browser.OpenURL("https://hlae.site/topic/390"); err != nil {
+				return err
+			}
+
+			return errors.New("CSGO Demos Manager未安装")
+		} else {
+			a.cfg.HlaePath = tool.FormatPath(usr.HomeDir + "/AppData/Local/AkiVer/hlae")
+		}
+	}
+
+	//声明变量
+	var srcVersion, cdnVersion, srcURL, cdnURL, srcFilename, cdnFilename, version, url, filename string
+
 	//声明用来控制进度条的变量
 	const count = 5
 	i := 0
-	a.setProgress(i/count)
+	a.setProgress(0)
 	a.setLog("正在读取HLAE和CDN源API...")
-	i+=100
 	//尝试读取HLAE和CDN源API
+	srcData, err1 := tool.GetHttpData(a.cfg.HlaeAPI)
+	cdnData, err2 := tool.GetHttpData(a.cfg.HlaeCdnAPI)
+	if err1 != nil && err2 != nil {
+		return errors.New("hlae官方和CDN的API均获取失败")
+	}
 
-
-	a.setProgress(i/count)
+	i += 100
+	a.setProgress(i / count)
 	a.setLog("正在解析API...")
-	i+=100
 	//解析API信息，决定下载的文件
+	if err1 == nil {
+		//解析官方API
+		var latestInst api.GitHubLatest
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(srcData), &latestInst)      //第二个参数要地址传递
+		if err != nil || latestInst.Message == "Not Found" || strings.Contains(latestInst.Message, "API rate limit"){
+			//HLAE API获取失败
+			a.noticeWarning("官方API解析失败: " + latestInst.Message)
+		} else {
+			srcVersion = latestInst.TagName
+			//获得zip附件信息
+			for _, file := range latestInst.Assets {
+				//过滤掉源码文件
+				if file.State == "uploaded" && !strings.Contains(file.Name, ".asc") && strings.Contains(file.Name, ".zip") {
+					srcURL = file.BrowserDownloadURL
+					srcFilename = file.Name
+				}
+			}
+		}
+	}
 
+	if err2 == nil {
+		//解析CDN API
+		var cdnInst api.ReleaseDelivr
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
+		if err != nil {
+			return err	//TODO
+		}
+		//获取版本号、下载地址和文件名
+		cdnVersion = cdnInst.Version
+		cdnURL = cdnInst.DownloadLink[0]
+		_, cdnFilename = filepath.Split(cdnURL)
+	}
 
-	a.setProgress(i/count)
+	//决定下载的文件
+	if srcVersion == "" && cdnVersion == "" {
+		return errors.New("hlae官方和CDN的API均获取或解析失败")
+	} else if srcVersion == "" {
+		a.noticeWarning("hlae官方API解析失败，CDN源可能不是最新版本")
+	} else if cdnVersion == "" {
+		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
+	}
+	if srcVersion != "" && srcVersion == cdnVersion {
+		//hlae版本非空且和CDN源版本一致，则下载CDN源
+		version = cdnVersion
+		url = cdnURL
+		filename = cdnFilename
+	} else {
+		//否则下载官方源
+		version = srcVersion
+		url = srcURL
+		filename = srcFilename
+	}
+
+	i += 100
+	a.setProgress(i / count)
 	a.setLog("正在下载HLAE安装包...")
-	i+=100
 	//下载HLAE安装包
+	if err := tool.DownloadFile(url, "./temp"); err != nil {
+		a.noticeError("HLAE下载失败")
+		return err
+	}
 
-
-	a.setProgress(i/count)
+	i += 100
+	a.setProgress(i / count)
 	a.setLog("正在解压HLAE安装包...")
-	i+=100
 	//解压
+	if err := tool.Decompress("./temp/" + filename, "./temp/hlae"); err != nil {
+		return err
+	}
 
-
-	a.setProgress(i/count)
+	i += 100
+	a.setProgress(i / count)
 	a.setLog("正在转移文件...")
-	i+=100
-	//转移+生成version文件
+	//转移
+	if err := copy.Copy("./temp/hlae", a.cfg.HlaePath); err != nil {
+		return err
+	}
+	_ = os.RemoveAll("./temp")
 
+	//生成version文件
+	a.cfg.HlaeVersion = version
+	ver := strings.Replace(version, "v", "", -1)
+	if err := tool.WriteFast(a.cfg.HlaePath + "/version", ver); err != nil {
+		return err
+	}
 
-	a.setProgress(i/count)
+	//完成
+	a.setProgress(100)
 	a.setLog("HLAE安装完成")
-	i+=100
-
 	return nil
 }
 
 //安装FFmpeg
 func (a *App) installFFmpeg() error {
+	//声明变量
+	var srcVersion, cdnVersion, srcURL, cdnURL, srcFilename, cdnFilename, version, url, filename string
 
+	//声明用来控制进度条的变量
+	const count = 5
+	i := 0
+	a.setProgress(0)
+	a.setLog("正在读取FFmpeg和CDN源API...")
+	//尝试读取FFmpeg和CDN源API
+	srcData, err1 := tool.GetHttpData(a.cfg.FFmpegAPI + "/release-version")
+	cdnData, err2 := tool.GetHttpData(a.cfg.FFmpegCdnAPI)
+	if err1 != nil && err2 != nil {
+		return errors.New("FFmpeg官方和CDN的API均获取失败")
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解析API...")
+	//解析API信息，决定下载的文件
+	if err1 == nil {
+		//解析官方API
+		srcVersion = srcData
+		srcURL = a.cfg.FFmpegAPI + "/ffmpeg-release-essentials.7z"
+		srcFilename = "ffmpeg-release-essentials.7z"
+	}
+
+	if err2 == nil {
+		//解析CDN API
+		var cdnInst api.ReleaseDelivr
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
+		if err != nil {
+			return err	//TODO
+		}
+		//获取版本号、下载地址和文件名
+		cdnVersion = cdnInst.Version
+		cdnURL = cdnInst.DownloadLink[0]
+		_, cdnFilename = filepath.Split(cdnURL)
+	}
+
+	//决定下载的文件
+	if srcVersion == "" && cdnVersion == "" {
+		return errors.New("FFmpeg官方和CDN的API均获取或解析失败")
+	} else if srcVersion == "" {
+		a.noticeWarning("FFmpeg官方API解析失败，CDN源可能不是最新版本")
+	} else if cdnVersion == "" {
+		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
+	}
+	if srcVersion != "" && srcVersion == cdnVersion {
+		//FFmpeg版本非空且和CDN源版本一致，则下载CDN源
+		version = cdnVersion
+		url = cdnURL
+		filename = cdnFilename
+	} else {
+		//否则下载官方源
+		version = srcVersion
+		url = srcURL
+		filename = srcFilename
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在下载FFmpeg安装包...")
+	//下载FFmpeg安装包
+	if err := tool.DownloadFile(url, "./temp"); err != nil {
+		a.noticeError("FFmpeg下载失败")
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解压FFmpeg安装包...")
+	//解压
+	if err := tool.Decompress("./temp/" + filename, "./temp/ffmpeg"); err != nil {
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在转移文件...")
+
+	//转移
+	if ok, err := tool.IsFileExisted("./temp/ffmpeg/bin/ffmpeg.exe"); err != nil || !ok {
+		if ok, err := tool.IsFileExisted("./temp/ffmpeg/ffmpeg-release-essentials/bin/ffmpeg.exe"); err != nil || !ok {
+			return err
+		} else {
+			if err := copy.Copy("./temp/ffmpeg/ffmpeg-release-essentials", a.cfg.HlaePath + "/ffmpeg"); err != nil {
+				return err	//\temp\ffmpeg\ffmpeg-release-essentials\bin
+			}
+		}
+	} else {
+		if err := copy.Copy("./temp/ffmpeg", a.cfg.HlaePath + "/ffmpeg"); err != nil {
+			return err
+		}
+	}
+	_ = os.RemoveAll("./temp")
+
+	//完成
+	a.cfg.FFmpegVersion = version
+	a.setProgress(100)
+	a.setLog("FFmpeg安装完成")
+	return nil
+}
+
+//更新HLAE
+func (a *App) updateHLAE() error {
+	//声明变量
+	var srcVersion, cdnVersion, srcURL, cdnURL, srcFilename, cdnFilename, version, url, filename string
+
+	//声明用来控制进度条的变量
+	const count = 5
+	i := 0
+	a.setProgress(0)
+	a.setLog("正在读取HLAE和CDN源API...")
+	//尝试读取HLAE和CDN源API
+	srcData, err1 := tool.GetHttpData(a.cfg.HlaeAPI)
+	cdnData, err2 := tool.GetHttpData(a.cfg.HlaeCdnAPI)
+	if err1 != nil && err2 != nil {
+		return errors.New("hlae官方和CDN的API均获取失败")
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解析API...")
+	//解析API信息，决定下载的文件
+	if err1 == nil {
+		//解析官方API
+		var latestInst api.GitHubLatest
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(srcData), &latestInst)      //第二个参数要地址传递
+		if err != nil || latestInst.Message == "Not Found" || strings.Contains(latestInst.Message, "API rate limit"){
+			//HLAE API获取失败
+			a.noticeWarning("官方API解析失败: " + latestInst.Message)
+		} else {
+			srcVersion = latestInst.TagName
+			//获得zip附件信息
+			for _, file := range latestInst.Assets {
+				//过滤掉源码文件
+				if file.State == "uploaded" && !strings.Contains(file.Name, ".asc") && strings.Contains(file.Name, ".zip") {
+					srcURL = file.BrowserDownloadURL
+					srcFilename = file.Name
+				}
+			}
+		}
+	}
+
+	if err2 == nil {
+		//解析CDN API
+		var cdnInst api.ReleaseDelivr
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
+		if err != nil {
+			return err	//TODO
+		}
+		//获取版本号、下载地址和文件名
+		cdnVersion = cdnInst.Version
+		cdnURL = cdnInst.DownloadLink[0]
+		_, cdnFilename = filepath.Split(cdnURL)
+	}
+
+	//决定是否更新和下载的文件
+	if srcVersion == "" && cdnVersion == "" {
+		return errors.New("hlae官方和CDN的API均获取或解析失败")
+	} else if srcVersion == "" {
+		a.noticeWarning("hlae官方API解析失败，CDN源可能不是最新版本")
+	} else if cdnVersion == "" {
+		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
+	}
+	if srcVersion != "" && srcVersion == cdnVersion {
+		//hlae版本非空且和CDN源版本一致，则下载CDN源
+		version = cdnVersion
+		url = cdnURL
+		filename = cdnFilename
+	} else {
+		//否则下载官方源
+		version = srcVersion
+		url = srcURL
+		filename = srcFilename
+	}
+
+	//对比版本号，决定是否更新
+	if version == a.cfg.HlaeVersion {
+		return nil
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在下载HLAE安装包...")
+	//下载HLAE安装包
+	if err := tool.DownloadFile(url, "./temp"); err != nil {
+		a.noticeError("HLAE下载失败")
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解压HLAE安装包...")
+	//解压
+	if err := tool.Decompress("./temp/" + filename, "./temp/hlae"); err != nil {
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在转移文件...")
+	//转移
+	if err := copy.Copy("./temp/hlae", a.cfg.HlaePath); err != nil {
+		return err
+	}
+	_ = os.RemoveAll("./temp")
+
+	//生成version文件
+	a.cfg.HlaeVersion = version
+	ver := strings.Replace(version, "v", "", -1)
+	if err := tool.WriteFast(a.cfg.HlaePath + "/version", ver); err != nil {
+		return err
+	}
+
+	//完成
+	a.setProgress(100)
+	a.setLog("HLAE更新完成")
+	return nil
+}
+
+//更新FFmpeg
+func (a *App) updateFFmpeg() error {
+	//声明变量
+	var srcVersion, cdnVersion, srcURL, cdnURL, srcFilename, cdnFilename, version, url, filename string
+
+	//声明用来控制进度条的变量
+	const count = 5
+	i := 0
+	a.setProgress(0)
+	a.setLog("正在读取FFmpeg和CDN源API...")
+	//尝试读取FFmpeg和CDN源API
+	srcData, err1 := tool.GetHttpData(a.cfg.FFmpegAPI + "/release-version")
+	cdnData, err2 := tool.GetHttpData(a.cfg.FFmpegCdnAPI)
+	if err1 != nil && err2 != nil {
+		return errors.New("FFmpeg官方和CDN的API均获取失败")
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解析API...")
+	//解析API信息，决定下载的文件
+	if err1 == nil {
+		//解析官方API
+		srcVersion = srcData
+		srcURL = a.cfg.FFmpegAPI + "/ffmpeg-release-essentials.7z"
+		srcFilename = "ffmpeg-release-essentials.7z"
+	}
+
+	if err2 == nil {
+		//解析CDN API
+		var cdnInst api.ReleaseDelivr
+		//注释下面一行->使用encoding/json库
+		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
+		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
+		if err != nil {
+			return err	//TODO
+		}
+		//获取版本号、下载地址和文件名
+		cdnVersion = cdnInst.Version
+		cdnURL = cdnInst.DownloadLink[0]
+		_, cdnFilename = filepath.Split(cdnURL)
+	}
+
+	//对比版本号，决定是否更新
+	if version == a.cfg.FFmpegVersion {
+		return nil
+	}
+	//决定下载的文件
+	if srcVersion == "" && cdnVersion == "" {
+		return errors.New("FFmpeg官方和CDN的API均获取或解析失败")
+	} else if srcVersion == "" {
+		a.noticeWarning("FFmpeg官方API解析失败，CDN源可能不是最新版本")
+	} else if cdnVersion == "" {
+		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
+	}
+	if srcVersion != "" && srcVersion == cdnVersion {
+		//FFmpeg版本非空且和CDN源版本一致，则下载CDN源
+		version = cdnVersion
+		url = cdnURL
+		filename = cdnFilename
+	} else {
+		//否则下载官方源
+		version = srcVersion
+		url = srcURL
+		filename = srcFilename
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在下载FFmpeg安装包...")
+	//下载FFmpeg安装包
+	if err := tool.DownloadFile(url, "./temp"); err != nil {
+		a.noticeError("FFmpeg下载失败")
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在解压FFmpeg安装包...")
+	//解压
+	if err := tool.Decompress("./temp/" + filename, "./temp/ffmpeg"); err != nil {
+		return err
+	}
+
+	i += 100
+	a.setProgress(i / count)
+	a.setLog("正在转移文件...")
+
+	//转移
+	if ok, err := tool.IsFileExisted("./temp/ffmpeg/bin/ffmpeg.exe"); err != nil || !ok {
+		if ok, err := tool.IsFileExisted("./temp/ffmpeg/ffmpeg-release-essentials/bin/ffmpeg.exe"); err != nil || !ok {
+			return err
+		} else {
+			if err := copy.Copy("./temp/ffmpeg/ffmpeg-release-essentials", a.cfg.HlaePath + "/ffmpeg"); err != nil {
+				return err	//\temp\ffmpeg\ffmpeg-release-essentials\bin
+			}
+		}
+	} else {
+		if err := copy.Copy("./temp/ffmpeg", a.cfg.HlaePath + "/ffmpeg"); err != nil {
+			return err
+		}
+	}
+	_ = os.RemoveAll("./temp")
+
+	//完成
+	a.cfg.FFmpegVersion = version
+	a.setProgress(100)
+	a.setLog("FFmpeg更新完成")
 	return nil
 }
 
 //启动HLAE
 func (a *App) LaunchHLAE() bool {
 	if a.cfg.HlaeState == true {
-		out, err := tool.Cmd("explorer " + a.cfg.HlaePath + "/hlae.exe")
+		out, err := tool.Cmd("start " + a.cfg.HlaePath + "/hlae.exe")
 		if err != nil {
 			a.setLog(out)
 			log.Println(out, err)
 			return false
 		}
-		return true
 	}
 	return false
 }
 
 //打开HLAE文件夹
 func (a *App) OpenHlaeDirectory() error {
-
+	if a.cfg.HlaeState == true {
+		if err := a.runtime.Browser.OpenFile(a.cfg.HlaePath); err != nil {
+			a.setLog(err.Error())
+			log.Println(err)
+			return err
+		}
+	}
 	return nil
 }

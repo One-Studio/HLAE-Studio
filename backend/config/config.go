@@ -17,9 +17,10 @@ type CFG struct {
 	FFmpegAPI     string //ffmpeg 版本号+下载地址等 API
 	FFmpegCdnAPI  string //ffmpeg CDN镜像 API
 	HlaePath      string //hlae安装位置
-	Init          bool	 //程序当前状态 是否已初始化
-	HlaeState     bool	//hlae安装状态
-	FFmpegState   bool	//ffmpeg安装状态
+	Init          bool   //程序当前状态 是否已初始化
+	Standalone    bool   //是否单独安装hlae+ffmpeg
+	HlaeState     bool   //hlae安装状态
+	FFmpegState   bool   //ffmpeg安装状态
 }
 
 //读设置

@@ -2,15 +2,18 @@ package tool
 
 import (
 	"errors"
+	"github.com/gen2brain/go-unarr"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 //打开文件和读内容 利用io/ioutil
@@ -114,21 +117,88 @@ func DownloadFile(url string, location string) error {
 	}
 }
 
-//判断是不是中文
-func IsChinese(str string) bool {
-	var count int
-	for _, v := range str {
-		if unicode.Is(unicode.Han, v) {
-			count++
-			break
-		}
-	}
-	return count > 0
+//判断是不是non-ASCII
+func IsNonASCII(str string) bool {
+	re := regexp.MustCompile("[[:^ascii:]]")
+	return re.MatchString(str)
+	//var count int
+	//for _, v := range str {
+	//	if unicode.Is(unicode.Han, v) {
+	//		count++
+	//		break
+	//	}
+	//}
+	//return count > 0
 }
 
-func CheckFFmpeg() bool {
+//解压zip 7z rar tar
+func Decompress(from string, to string) error {
+	a, err := unarr.NewArchive(from)
+	if err != nil {
+		return err
+	}
+	defer a.Close()
 
-	return false
+	_, err = a.Extract(to)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getCurrentDirectory() string {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		panic(err)
+	}
+	return strings.Replace(dir, "\\", "/", -1)
+}
+
+//规格化路径
+func FormatPath(s string) string {
+	if strings.HasPrefix(s, "."){
+		s = strings.Replace(s, ".", getCurrentDirectory(), 1)
+	}
+	s = strings.Replace(s, "\\", "/", -1)
+
+	return strings.TrimRight(s, "\\")
+}
+
+//复制文件夹
+func CopyDir(from string, to string) error {
+	from = FormatPath(from)
+	to = FormatPath(to)
+
+	//确保目标路径存在，否则复制报错exit status 4
+	exist, err := IsFileExisted(to)
+	if err != nil {
+		return err
+	} else if exist == false {
+		err := os.Mkdir(to, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	var out string
+	var cmd *exec.Cmd
+
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("xcopy", from, to, "/I", "/E", "/Y", "/R")
+	} else {
+		cmd = exec.Command("cp", "-R", from, to)
+	}
+
+	//if runtime.GOOS == "windows" {
+	//	out, err = Cmd("xcopy /I /E /Y " + strconv.Quote(from) + " " + strconv.Quote(to))
+	//} else {
+	//	out, err = Cmd("cp -R " + from + " " + to)
+	//}
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		log.Println(out, err)
+	}
+	return err
 }
 
 //执行一次command指令

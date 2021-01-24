@@ -1,6 +1,9 @@
 package api
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"log"
+)
 
 type ReleaseDelivr struct {
 	Version      string   `json:"Version"`
@@ -72,4 +75,17 @@ type FFmpegTag struct {
 		URL string `json:"url"`
 	} `json:"commit"`
 	NodeID string `json:"node_id"`
+}
+
+func ParseChangelog(xmlData string) (string, error) {
+	//初始化实例并解析
+	var ChangelogInst Changelog
+	//使用encoding/xml库
+	err := xml.Unmarshal([]byte(xmlData), &ChangelogInst) //第二个参数要地址传递
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	//返回Changelog里的版本号
+	return "v" + ChangelogInst.Release[0].Version, nil
 }

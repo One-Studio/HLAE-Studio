@@ -25,7 +25,10 @@
       {{ log }}
     </div>
     <div class="btn-control">
-      <a-button class="btn" size="large" @click="tabSetting"><a-icon type="setting" /></a-button>
+      <a-button class="btn" size="large" @click="tabSetting">
+<!--        <a-icon type="setting" />-->
+        <a-icon type="reload" />
+      </a-button>
       <a-button class="btn" size="large" @click="openDirHLAE"><a-icon type="folder-open" /></a-button>
       <a-button class="btn" @click="launchHLAE" style="margin-right: 0;width: 36vw;font-size: 4.5vw;" size="large">打开HLAE</a-button>
     </div>
@@ -42,7 +45,8 @@ export default {
       versionCode: "Testify",
       appVersion: "v0.0.1",
       progress: 0,
-      log: "",
+      log: " ",
+      standalone: true,
     };
   },
   mounted() {
@@ -59,15 +63,36 @@ export default {
     Wails.Events.On("SetAppVersion", (appVersion) => {
       this.appVersion = appVersion;
     });
+    Wails.Events.On("SetStandalone", (standalone) => {
+      this.standalone = standalone;
+    });
+    Wails.Events.On("DoSelectOption", () => {
+      this.selectOption();
+    });
+    Wails.Events.On("NoticeSuccess", (msg) => {
+      this.$message.success(msg, 5);
+    });
+    Wails.Events.On("NoticeError", (msg) => {
+      this.$message.error(msg, 5);
+    });
+    Wails.Events.On("NoticeWarning", (msg) => {
+      this.$message.warning(msg, 5);
+    });
     this.checkUpdate();
   },
   methods: {
     launchHLAE () {
       // console.log("启动HLAE");
-      window.backend.App.LaunchHLAE();
+      window.backend.App.LaunchHLAE().then(ok => {
+        if (ok === false) {
+          this.$message.warning('HLAE启动失败', 5);
+        }
+      });
     },
     tabSetting () {
       console.log("切换到设置Tab页"); //TODO
+      //用于debug
+      this.checkUpdate()
     },
     openDirHLAE () {
       // console.log("打开HLAE安装位置");
@@ -78,6 +103,32 @@ export default {
     checkState () {
       // console.log("检查HLAE更新");
       window.backend.App.CheckState();
+    },
+    selectOption() {
+      //选择HLAE安装方法和安装位置 TODO: debug 默认选择是ok
+      let standalone = false;
+      this.$confirm({
+        title: '选择HLAE和FFmpeg的安装方式',
+        content: '附属安装：关联CSGO Demos Manager\n单独安装：单独选择位置安装',
+        okText: '附属安装',
+        cancelText: '单独安装',
+        // bodyStyle: 'font-size: 20vw',
+        onOk() {
+          standalone = false;
+          //选择完成，传给后端
+          window.backend.App.SetOption(standalone);
+          //安装/检查更新
+          window.backend.App.CheckUpdate();
+        },
+        onCancel() {
+          standalone = true;
+          //选择完成，传给后端
+          window.backend.App.SetOption(standalone);
+          //安装/检查更新
+          window.backend.App.CheckUpdate();
+        },
+      });
+
     },
     checkUpdate () {
       // console.log("检查HLAE更新");
@@ -169,4 +220,7 @@ export default {
   border-radius: 3vw;
 }
 
+.modal {
+  font-size: 20vw;
+}
 </style>
