@@ -120,8 +120,8 @@ export default {
     selectOption() {
       //选择HLAE安装方法和安装位置
       this.$confirm({
-        title:  () => <div style="font-size: 4.5vw;">选择HLAE的安装方式</div>,
-        content:  () => <div style="font-size: 3.75vw;">· 关联CSGO Demos Manager安装<br></br>· 单独选择位置安装</div>,
+        title:  () => <div style="font-size: 4.25vw;">选择HLAE的安装方式</div>,
+        content:  () => <div style="font-size: 3vw;">· 关联CSGO Demos Manager<br></br>· 单独选择位置安装</div>,
         okText: '关联安装',
         cancelText: '单独安装',
         onOk() {
