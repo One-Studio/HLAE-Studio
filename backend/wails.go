@@ -15,43 +15,47 @@ func (a *App) SayHello() string {
 	return "Hello to Frontend!"
 }
 
-//设置进度条 需要前端Mount
+//设置进度条
 func (a *App) setProgress(percent int) {
 	a.runtime.Events.Emit("SetProgess", percent)
 }
 
+//设置日志信息
 func (a *App) setLog(log string) {
 	a.runtime.Events.Emit("SetLog", log)
 }
 
+//设置版本代号
 func (a *App) setVersionCode(versionCode string) {
 	a.runtime.Events.Emit("SetVersionCode", versionCode)
 }
 
+//设置App版本
 func (a *App) setAppVersion(appVersion string) {
 	a.runtime.Events.Emit("SetAppVersion", appVersion)
 }
 
-func (a *App) setStandalone(standalone string) {
-	a.runtime.Events.Emit("SetStandalone", standalone)
-}
-
+//选择hlae安装方式
 func (a *App) doSelectOption() {
 	a.runtime.Events.Emit("DoSelectOption")
 }
 
+//通知成功
 func (a *App) noticeSuccess(msg string) {
 	a.runtime.Events.Emit("NoticeSuccess", msg)
 }
 
+//通知错误
 func (a *App) noticeError(msg string) {
 	a.runtime.Events.Emit("NoticeError", msg)
 }
 
+//通知警告
 func (a *App) noticeWarning(msg string) {
 	a.runtime.Events.Emit("NoticeWarning", msg)
 }
 
+//选择文件夹
 func (a *App) SelectDirectory() string {
 	directory := a.runtime.Dialog.SelectDirectory()
 	if ok, err := tool.IsFileExisted(directory); err != nil || !ok {
@@ -63,6 +67,7 @@ func (a *App) SelectDirectory() string {
 	return directory
 }
 
+//选择文件
 func (a *App) SelectFile() string {
 	path := a.runtime.Dialog.SelectFile()
 	if ok, err := tool.IsFileExisted(path); err != nil || !ok {
@@ -73,6 +78,7 @@ func (a *App) SelectFile() string {
 	return path
 }
 
+//选择文件，有标题
 func (a *App) SelectFileTitle(Title string) string {
 	path := a.runtime.Dialog.SelectFile(Title)
 	if ok, err := tool.IsFileExisted(path); err != nil || !ok {
@@ -83,6 +89,7 @@ func (a *App) SelectFileTitle(Title string) string {
 	return path
 }
 
+//选择文件，有标题和过滤文件
 func (a *App) SelectFileTitleFilter(Title string, Filter string) string {
 	path := a.runtime.Dialog.SelectFile(Title, Filter)
 	if ok, err := tool.IsFileExisted(path); err != nil || !ok {

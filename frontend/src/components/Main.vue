@@ -25,12 +25,16 @@
       {{ log }}
     </div>
     <div class="btn-control">
-      <a-button class="btn" size="large" @click="tabSetting" :loading="btnSetting">
+      <a-button class="btn" size="large" @click="manualUpdate" :disabled="btnUpdate">
 <!--        <a-icon type="setting" />-->
         <a-icon type="reload" />
       </a-button>
-      <a-button class="btn" size="large" @click="openDirHLAE"><a-icon type="folder-open" :loading="btnOpenDir" /></a-button>
-      <a-button class="btn" @click="launchHLAE" style="margin-right: 0;width: 36vw;font-size: 4.5vw;" size="large" :loading="btnLaunchHLAE" >打开HLAE</a-button>
+      <a-button class="btn" size="large" @click="openDirHLAE" >
+        <a-icon type="folder-open" />
+      </a-button>
+      <a-button class="btn" @click="launchHLAE" style="margin-right: 0;width: 36vw;font-size: 4.5vw;" size="large" >
+        打开HLAE <!--  :disabled="btnLaunchHLAE" -->
+      </a-button>
     </div>
   </div>
 </template>
@@ -42,12 +46,12 @@ export default {
   name: "Main",
   data() {
     return {
-      versionCode: "Testify",
-      appVersion: "v1.0.0",
+      versionCode: "Version",
+      appVersion: "v0.0.1",
       progress: 0,
       log: "",
       standalone: true,
-      btnSetting: false,
+      btnUpdate: false,
       btnOpenDir: false,
       btnLaunchHLAE: false,
     };
@@ -73,6 +77,8 @@ export default {
       this.selectOption();
     });
     Wails.Events.On("NoticeSuccess", (msg) => {
+      // console.log(msg);
+      // let mes = msg;
       this.$message.success(msg, 5);
     });
     Wails.Events.On("NoticeError", (msg) => {
@@ -81,29 +87,29 @@ export default {
     Wails.Events.On("NoticeWarning", (msg) => {
       this.$message.warning(msg, 5);
     });
+    //通知传参
+    window.backend.App.SetVar();
+    //检查更新
     this.checkUpdate();
   },
   methods: {
     launchHLAE () {
-      // console.log("启动HLAE");
       this.btnLaunchHLAE = true;
       window.backend.App.LaunchHLAE().then(ok => {
         if (ok === false) {
           this.$message.warning('HLAE启动失败', 5);
         }
+        this.btnLaunchHLAE = false;
       });
-      this.btnLaunchHLAE = false;
     },
-    tabSetting () {
-      console.log("切换到设置Tab页"); //TODO
-      //用于debug
-      this.checkUpdate()
+    manualUpdate () {
+      this.checkUpdate();
     },
     openDirHLAE () {
-      // console.log("打开HLAE安装位置");
       this.btnOpenDir = true;
-      window.backend.App.OpenHlaeDirectory();
-      this.btnOpenDir = false;
+      window.backend.App.OpenHlaeDirectory().then( () => {
+        this.btnOpenDir = false;
+      });
       //发送wails信息->Go?
       // window.wails.Events.Emit("error", "这是一条错误信息！");
     },
@@ -114,11 +120,10 @@ export default {
     selectOption() {
       //选择HLAE安装方法和安装位置
       this.$confirm({
-        title: '选择HLAE和FFmpeg的安装方式',
-        content: '附属安装：关联CSGO Demos Manager\n单独安装：单独选择位置安装',
-        okText: '附属安装',
+        title:  () => <div style="font-size: 4.5vw;">选择HLAE的安装方式</div>,
+        content:  () => <div style="font-size: 3.75vw;">· 关联CSGO Demos Manager安装<br></br>· 单独选择位置安装</div>,
+        okText: '关联安装',
         cancelText: '单独安装',
-        // bodyStyle: 'font-size: 20vw',
         onOk() {
           //选择完成，传给后端
           window.backend.App.SetOption(false);
@@ -135,10 +140,10 @@ export default {
 
     },
     checkUpdate () {
-      // console.log("检查HLAE更新");
-      this.btnOpenDir = true; //TODO 修改成update相关名称
-      window.backend.App.CheckUpdate();
-      this.btnOpenDir = false;
+      this.btnUpdate = true;
+      window.backend.App.CheckUpdate().then( () => {
+        this.btnUpdate = false;
+      });
     }
   }
 }

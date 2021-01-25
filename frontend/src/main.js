@@ -12,6 +12,7 @@ import * as Wails from '@wailsapp/runtime';
 
 Vue.use(Antd);
 
+
 Wails.Init(() => {
 	new Vue({
 		render: h => h(App)

@@ -34,9 +34,6 @@ func (a *App) WailsInit(runtime *wails.Runtime) error {
 		return err
 	}
 
-	//设置前端
-	a.setAppVersion(a.cfg.AppVersion)
-	a.setVersionCode(a.cfg.VersionCode)
 
 	return nil
 }
@@ -49,6 +46,12 @@ func (a *App) WailsShutdown() {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+//设置前端变量
+func (a *App) SetVar() {
+	a.setAppVersion(a.cfg.AppVersion)
+	a.setVersionCode(a.cfg.VersionCode)
 }
 
 //检查更新
@@ -180,6 +183,18 @@ func (a *App) installHLAE() error {
 		//识别已安装hlae，则检查更新
 		if ok, _ := tool.IsFileExisted(path + "/hlae.exe"); ok {
 			a.cfg.HlaePath = tool.FormatPath(path)
+			//解析修正本地hlae版本号
+			changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml")
+			if err != nil {
+				a.noticeError("读取本地版本号失败: " + err.Error())
+				return err
+			}
+			if tVersion, err := api.ParseChangelog(changelog); err != nil {
+				a.noticeError("解析本地版本号失败: " + err.Error())
+				return err
+			} else {
+				a.cfg.HlaeVersion = tVersion
+			}
 			if err := a.updateHLAE(); err != nil {
 				return err
 			}
@@ -258,7 +273,7 @@ func (a *App) installHLAE() error {
 		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
 		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
 		if err != nil {
-			return err	//TODO
+			return err
 		}
 		//获取版本号、下载地址和文件名
 		cdnVersion = cdnInst.Version
@@ -269,13 +284,14 @@ func (a *App) installHLAE() error {
 	//决定下载的文件
 	if srcVersion == "" && cdnVersion == "" {
 		return errors.New("hlae官方和CDN的API均获取或解析失败")
-	} else if srcVersion == "" {
-		a.noticeWarning("hlae官方API解析失败，CDN源可能不是最新版本")
 	} else if cdnVersion == "" {
 		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
+	} else if srcVersion == "" {
+		a.noticeWarning("hlae官方API解析失败，CDN源可能不是最新版本")
 	}
-	if srcVersion != "" && srcVersion == cdnVersion {
-		//hlae版本非空且和CDN源版本一致，则下载CDN源
+
+	if srcVersion == "" || (srcVersion != "" && srcVersion == cdnVersion) {
+		//官方版本非空且和CDN源版本一致，则下载CDN源
 		version = cdnVersion
 		url = cdnURL
 		filename = cdnFilename
@@ -360,7 +376,7 @@ func (a *App) installFFmpeg() error {
 		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
 		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
 		if err != nil {
-			return err	//TODO
+			return err
 		}
 		//获取版本号、下载地址和文件名
 		cdnVersion = cdnInst.Version
@@ -376,8 +392,8 @@ func (a *App) installFFmpeg() error {
 	} else if cdnVersion == "" {
 		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
 	}
-	if srcVersion != "" && srcVersion == cdnVersion {
-		//FFmpeg版本非空且和CDN源版本一致，则下载CDN源
+	if srcVersion == "" || (srcVersion != "" && srcVersion == cdnVersion) {
+		//官方版本非空且和CDN源版本一致，则下载CDN源
 		version = cdnVersion
 		url = cdnURL
 		filename = cdnFilename
@@ -482,7 +498,7 @@ func (a *App) updateHLAE() error {
 		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
 		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
 		if err != nil {
-			return err	//TODO
+			return err
 		}
 		//获取版本号、下载地址和文件名
 		cdnVersion = cdnInst.Version
@@ -498,8 +514,8 @@ func (a *App) updateHLAE() error {
 	} else if cdnVersion == "" {
 		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
 	}
-	if srcVersion != "" && srcVersion == cdnVersion {
-		//hlae版本非空且和CDN源版本一致，则下载CDN源
+	if srcVersion == "" || (srcVersion != "" && srcVersion == cdnVersion) {
+		//官方版本非空且和CDN源版本一致，则下载CDN源
 		version = cdnVersion
 		url = cdnURL
 		filename = cdnFilename
@@ -589,7 +605,7 @@ func (a *App) updateFFmpeg() error {
 		var jsonx = jsoniter.ConfigCompatibleWithStandardLibrary //使用高性能json-iterator/go库
 		err := jsonx.Unmarshal([]byte(cdnData), &cdnInst)      //第二个参数要地址传递
 		if err != nil {
-			return err	//TODO
+			return err
 		}
 		//获取版本号、下载地址和文件名
 		cdnVersion = cdnInst.Version
@@ -605,8 +621,8 @@ func (a *App) updateFFmpeg() error {
 	} else if cdnVersion == "" {
 		a.noticeWarning("CDN源解析失败，下载速度可能较慢")
 	}
-	if srcVersion != "" && srcVersion == cdnVersion {
-		//FFmpeg版本非空且和CDN源版本一致，则下载CDN源
+	if srcVersion == "" || (srcVersion != "" && srcVersion == cdnVersion) {
+		//官方版本非空且和CDN源版本一致，则下载CDN源
 		version = cdnVersion
 		url = cdnURL
 		filename = cdnFilename

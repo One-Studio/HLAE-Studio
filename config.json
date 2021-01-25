@@ -1,0 +1,15 @@
+{
+    "VersionCode": "Testify",
+    "AppVersion": "v1.0.1",
+    "HlaeVersion": "v2.109.7",
+    "FFmpegVersion": "4.3.1-2021-01-01",
+    "HlaeAPI": "https://api.github.com/repos/advancedfx/advancedfx/releases/latest",
+    "HlaeCdnAPI": "https://cdn.jsdelivr.net/gh/One-Studio/HLAE-Archive@master/api.json",
+    "FFmpegAPI": "https://www.gyan.dev/ffmpeg/builds",
+    "FFmpegCdnAPI": "https://cdn.jsdelivr.net/gh/One-Studio/FFmpeg-Win64@master/api.json",
+    "HlaePath": "C:/Users/Purp1e/AppData/Local/AkiVer/hlae",
+    "Init": true,
+    "Standalone": false,
+    "HlaeState": true,
+    "FFmpegState": true
+}
