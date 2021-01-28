@@ -43,7 +43,7 @@
 
 > 请备注hlae studio捐赠
 
-![支付宝](.\assets\支付宝.png)![微信](.\assets\微信.png)
+<img src=".\assets\支付宝.png" alt="支付宝" style="zoom: 67%;margin: auto;" /><img src=".\assets\微信.png" alt="微信" style="zoom: 67%;margin: auto;" />
 
 # 翻译
 
