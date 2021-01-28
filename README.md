@@ -37,7 +37,7 @@
 
 # 程序运行截图
 
-<img src=".\assets\程序界面.png" alt="程序界面" style="zoom:50%;" />
+<img src=".\assets\界面.png" alt="程序界面"/>
 
 # 捐赠
 
