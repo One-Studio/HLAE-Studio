@@ -1,5 +1,11 @@
 <h1 align="center">HLAE Studio</h1>
-[![stars](https://img.shields.io/github/stars/One-Studio/HLAE-Studio.svg?style=flat&color=green)](https://github.com/One-Studio/HLAE-Studio)[![fork](https://img.shields.io/github/forks/One-Studio/HLAE-Studio.svg?style=flat&color=critical)](https://github.com/One-Studio/HLAE-Studio)![license](https://img.shields.io/badge/license-GPL%203-orange.svg?style=flat)[![donate](https://img.shields.io/badge/$-donate-ff69b4.svg?style=flat)](https://github.com/One-Studio/HLAE-Studio#捐赠)[![translation](https://img.shields.io/badge/$-translation-ff69b4.svg?style=flat&color=blueviolet)](https://github.com/One-Studio/HLAE-Studio#翻译)[![release](https://img.shields.io/github/release/One-Studio/HLAE-Studio.svg?style=flat&color=blue)](https://github.com/One-Studio/HLAE-Studio/releases)
+
+[![stars](https://img.shields.io/github/stars/One-Studio/HLAE-Studio.svg?style=flat&color=green)](https://github.com/One-Studio/HLAE-Studio
+)[![fork](https://img.shields.io/github/forks/One-Studio/HLAE-Studio.svg?style=flat&color=critical)](https://github.com/One-Studio/HLAE-Studio)
+![license](https://img.shields.io/badge/license-GPL%203-orange.svg?style=flat)
+[![donate](https://img.shields.io/badge/$-donate-ff69b4.svg?style=flat)](https://github.com/One-Studio/HLAE-Studio#捐赠
+)[![translation](https://img.shields.io/badge/$-translation-ff69b4.svg?style=flat&color=blueviolet)](https://github.com/One-Studio/HLAE-Studio#翻译)
+[![release](https://img.shields.io/github/release/One-Studio/HLAE-Studio.svg?style=flat&color=blue)](https://github.com/One-Studio/HLAE-Studio/releases)
 
 # 简介
 
