@@ -31,7 +31,7 @@
 
 [GitHub](https://github.com/One-Studio/HLAE-Studio/releases)
 
-[天翼云盘](https://cloud.189.cn/t/YnmMr2iiQbYr) （访问码：sil9）
+[天翼云盘](https://cloud.189.cn/t/qumieauIBJBf（访问码：0pxu）) （访问码：0pxu）
 
 [奶牛快传](https://cowtransfer.com/s/5616bac4a21e42)
 
