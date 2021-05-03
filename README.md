@@ -33,7 +33,8 @@
 
 [天翼云盘](https://cloud.189.cn/t/qumieauIBJBf（访问码：0pxu）) （访问码：0pxu）
 
-[奶牛快传](https://cowtransfer.com/s/5616bac4a21e42)
+[蓝奏云](https://purp1e.lanzous.com/b01iace1c) 密码: 9s6r
+
 
 # 程序运行截图
 
