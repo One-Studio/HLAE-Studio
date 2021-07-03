@@ -1,20 +1,19 @@
 module HLAE-Studio
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/gen2brain/go-unarr v0.1.1
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/json-iterator/go v1.1.10
+	github.com/json-iterator/go v1.1.11
 	github.com/kr/text v0.2.0 // indirect
-	github.com/leaanthony/mewn v0.10.7
 	github.com/leaanthony/slicer v1.5.0 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/otiai10/copy v1.4.2
+	github.com/otiai10/copy v1.6.0
 	github.com/pkg/browser v0.0.0-20210621091255-c198bc921a84 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect

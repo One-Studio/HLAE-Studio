@@ -34,7 +34,7 @@ func (a *App) WailsInit(runtime *wails.Runtime) error {
 		return err
 	}
 
-
+	fmt.Println("wails测试")
 	return nil
 }
 

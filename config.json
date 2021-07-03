@@ -1,8 +1,8 @@
 {
     "VersionCode": "Testify",
-    "AppVersion": "v1.0.1",
-    "HlaeVersion": "v2.109.7",
-    "FFmpegVersion": "4.3.1-2021-01-01",
+    "AppVersion": "v1.0.2",
+    "HlaeVersion": "v2.118.0.2",
+    "FFmpegVersion": "4.4",
     "HlaeAPI": "https://api.github.com/repos/advancedfx/advancedfx/releases/latest",
     "HlaeCdnAPI": "https://cdn.jsdelivr.net/gh/One-Studio/HLAE-Archive@master/api.json",
     "FFmpegAPI": "https://www.gyan.dev/ffmpeg/builds",
