@@ -13,9 +13,9 @@ type CFG struct {
 	HlaeVersion   string //hlae版本
 	FFmpegVersion string //ffmpeg版本
 	HlaeAPI       string //hlae 版本号+下载地址等 API
-	HlaeCdnAPI    string //hlae CDN镜像 API
+	//HlaeCdnAPI    string //hlae CDN镜像 API
 	FFmpegAPI     string //ffmpeg 版本号+下载地址等 API
-	FFmpegCdnAPI  string //ffmpeg CDN镜像 API
+	//FFmpegCdnAPI  string //ffmpeg CDN镜像 API
 	HlaePath      string //hlae安装位置
 	Init          bool   //程序当前状态 是否已初始化
 	Standalone    bool   //是否单独安装hlae+ffmpeg
@@ -103,9 +103,9 @@ func checkConfig(cfg CFG) (CFG, error) {
 	cfg.VersionCode = defaultCFG.VersionCode
 	cfg.AppVersion = defaultCFG.AppVersion
 	cfg.HlaeAPI = defaultCFG.HlaeAPI
-	cfg.HlaeCdnAPI = defaultCFG.HlaeCdnAPI
+	//cfg.HlaeCdnAPI = defaultCFG.HlaeCdnAPI
 	cfg.FFmpegAPI = defaultCFG.FFmpegAPI
-	cfg.FFmpegCdnAPI = defaultCFG.FFmpegCdnAPI
+	//cfg.FFmpegCdnAPI = defaultCFG.FFmpegCdnAPI
 
 	return cfg, nil
 }

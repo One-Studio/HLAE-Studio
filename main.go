@@ -23,11 +23,11 @@ func main() {
 		JS:     js,
 		CSS:    css,
 		Colour: "#131313",
-		DisableInspector: false,
-		Resizable: true,
+		//DisableInspector: false,
+		//Resizable: true,
 	})
 
 	//绑定后端&运行
 	app.Bind(&backend.App{})
-	app.Run()
+	_ = app.Run()
 }
