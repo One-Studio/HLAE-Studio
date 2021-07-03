@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/otiai10/copy"
 	"github.com/wailsapp/wails"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
-	"github.com/otiai10/copy"
 )
 
 ///// app.go 存放backend包与frontend交互的大部分操作
