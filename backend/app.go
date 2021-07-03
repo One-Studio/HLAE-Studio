@@ -9,6 +9,7 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/wailsapp/wails"
 	"log"
+	"math/rand"
 	"os"
 	"os/user"
 	"strings"
@@ -112,20 +113,17 @@ func (a *App) checkState() error {
 	//如果已经初始化，再核实一下hlae和ffmpeg程序位置
 	if a.cfg.Init == true {
 		//检查hlae
-		if ok := tool.IsFileExisted(a.cfg.HlaePath + "/hlae.exe"); ok {
+		ok1 := tool.IsFileExisted(a.cfg.HlaePath + "/hlae.exe")
+		ok2 := tool.IsFileExisted(a.cfg.HlaePath + "/changelog.xml")
+		if ok1 && ok2 {
 			a.cfg.HlaeState = true
 			//解析修正本地hlae版本号
-			changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml")
-			if err != nil {
-				a.noticeError("读取本地版本号失败: " + err.Error())
+			if ver, err := a.getLocalHlaeVersion(); err != nil {
 				return err
+			} else if ver != "" {
+				a.cfg.HlaeVersion = ver
 			}
-			if tVersion, err := api.ParseChangelog(changelog); err != nil {
-				a.noticeError("解析本地版本号失败: " + err.Error())
-				return err
-			} else {
-				a.cfg.HlaeVersion = tVersion
-			}
+
 			//检查ffmpeg
 			if ffmpegOK := tool.IsFileExisted(a.cfg.HlaePath + "/ffmpeg/bin/ffmpeg.exe"); ffmpegOK {
 				a.cfg.FFmpegState = true
@@ -212,10 +210,8 @@ func (a *App) getLocalHlaeVersion() (string, error) {
 	} else {
 		//获取本地版本号
 		if changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml"); err != nil {
-			//a.noticeError("读取本地版本号失败: " + err.Error())
 			return "", err
 		} else if version, err := api.ParseChangelog(changelog); err != nil {
-			//a.noticeError("解析本地版本号失败: " + err.Error())
 			return "", err
 		} else {
 			return version, nil
@@ -237,69 +233,12 @@ func (a *App) getVersion(api string) (version string, err error) {
 	return
 }
 
-//安装HLAE
-//func (a *App) installHLAEOld() error {
-//	//选择安装位置
-//	if a.cfg.Standalone == true {
-//		a.noticeWarning("请选择安装位置，或者已有hlae.exe的文件夹")
-//		//time.Sleep(2 * time.Second)
-//		path := a.SelectDirectory()
-//		if path == "" {
-//			a.noticeWarning("已取消安装")
-//			_ = tool.WriteFast("./cancel.txt", "取消安装")
-//			return nil
-//		}
-//
-//		//识别已安装hlae，则检查更新
-//		if ok, _ := tool.IsFileExisted(path + "/hlae.exe"); ok {
-//			a.cfg.HlaePath = tool.FormatPath(path)
-//			//解析修正本地hlae版本号
-//			changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml")
-//			if err != nil {
-//				a.noticeError("读取本地版本号失败: " + err.Error())
-//				return err
-//			}
-//			if tVersion, err := api.ParseChangelog(changelog); err != nil {
-//				a.noticeError("解析本地版本号失败: " + err.Error())
-//				return err
-//			} else {
-//				a.cfg.HlaeVersion = tVersion
-//			}
-//			if err := a.updateHLAE(); err != nil {
-//				return err
-//			}
-//			return nil
-//		}
-//
-//		//新装hlae
-//		a.cfg.HlaePath = tool.FormatPath(path)
-//
-//	} else {
-//		//检查CSGO Demos Manager是否安装 "%HOMEDIR%/AppData/Local/AkiVer/"
-//		usr, err := user.Current()
-//		if err != nil {
-//			return err
-//		}
-//		if ok, err := tool.IsFileExisted(usr.HomeDir + "/AppData/Local/AkiVer/"); err != nil || !ok {
-//			//Manager未安装  提示安装且弹出下载的网页
-//			if err := a.runtime.Browser.OpenURL("https://github.com/akiver/CSGO-Demos-Manager/releases/latest"); err != nil {
-//				return err
-//			}
-//			if err := a.runtime.Browser.OpenURL("https://hlae.site/topic/390"); err != nil {
-//				return err
-//			}
-//
-//			return errors.New("CSGO Demos Manager未安装")
-//		}
-//
-//		//新装hlae
-//		a.cfg.HlaePath = tool.FormatPath(usr.HomeDir + "/AppData/Local/AkiVer/hlae")
-//	}
-//
-//	a.setLog("莫名其妙跳到了不可能到达的地方")
-//
-//	return nil
-//}
+//生成随机字符串
+func (a *App) randomString(n int) string  {
+	randBytes := make([]byte, n/2)
+	rand.Read(randBytes)
+	return fmt.Sprintf("%X", randBytes)
+}
 
 //安装FFmpeg
 func (a *App) installFFmpeg() error {
@@ -326,14 +265,17 @@ func (a *App) updateHLAE() error {
 	}
 
 	//下载HLAE安装包
-	var filename string
-	if filename, err = tool.GrabDownload(a.cfg.HlaeAPI, "./temp"); err != nil {
+	var filepath = "./temp/" + a.randomString(12)
+	if err = tool.DownloadFile(filepath, a.cfg.HlaeAPI); err != nil {
 		a.noticeError("HLAE下载失败")
 		return err
 	}
 
+	//获取文件路径+名
+	var file = tool.GetFilePathFromDir(filepath, "hlae")
+
 	//解压
-	if err = tool.Decompress("./temp/" + filename, "./temp/hlae"); err != nil {
+	if err = tool.Decompress(file, "./temp/hlae"); err != nil {
 		return err
 	}
 
@@ -342,6 +284,8 @@ func (a *App) updateHLAE() error {
 		return err
 	}
 	_ = os.RemoveAll("./temp/hlae")
+	_ = os.RemoveAll(filepath)
+	a.cfg.HlaeVersion = latestVersion
 
 	//生成version文件
 	if !a.cfg.Standalone {
@@ -371,27 +315,32 @@ func (a *App) updateFFmpeg() error {
 	}
 
 	//下载HLAE安装包
-	var filename string
-	if filename, err = tool.GrabDownload(a.cfg.FFmpegAPI, "./temp"); err != nil {
+	var filepath = "./temp/" + a.randomString(12)
+	if err = tool.DownloadFile(filepath, a.cfg.FFmpegAPI); err != nil {
 		a.noticeError("HLAE下载失败")
 		return err
 	}
 
+	//获取文件路径+名
+	var file = tool.GetFilePathFromDir(filepath, "ffmpeg")
+
 	//解压
-	if err = tool.Decompress("./temp/" + filename, "./temp/ffmpeg"); err != nil {
+	if err = tool.Decompress(file, "./temp/ffmpeg"); err != nil {
 		return err
 	}
 
 	//转移
-	filepath := tool.GetFilePathFromDir("./temp/ffmpeg", "ffmpeg.exe")
-	if filepath == "" {
+	file = tool.GetFilePathFromDir("./temp/ffmpeg", "ffmpeg.exe")
+	if file == "" {
 		return errors.New("找不到ffmpeg解压后的程序文件")
 	}
-	if err = copy.Copy(filepath, a.cfg.HlaePath + "/ffmpeg/bin"); err != nil {
+	if err = copy.Copy(file, a.cfg.HlaePath + "/ffmpeg/bin/ffmpeg.exe"); err != nil {
 		return err
 	}
 
 	_ = os.RemoveAll("./temp/ffmpeg")
+	_ = os.RemoveAll(filepath)
+	a.cfg.FFmpegVersion = latestVersion
 	return nil
 }
 

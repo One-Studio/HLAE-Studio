@@ -1,9 +1,9 @@
 package config
 
 import (
-	"HLAE-Studio/backend/tool"
 	"bytes"
 	"encoding/json"
+	tool "github.com/One-Studio/ptools/pkg"
 	"os"
 )
 
@@ -26,10 +26,7 @@ type CFG struct {
 //读设置
 func ReadConfig(path string) (CFG, error) {
 	//检查文件是否存在
-	exist, err := tool.IsFileExisted(path)
-	if err != nil {
-		return CFG{}, err
-	} else if exist == true {
+	if exist := tool.IsFileExisted(path); exist == true {
 		//存在则读取文件
 		content, err := tool.ReadAll(path)
 		if err != nil {
@@ -59,16 +56,9 @@ func ReadConfig(path string) (CFG, error) {
 //写设置
 func SaveConfig(cfg CFG, path string) error {
 	//检查文件是否存在
-	exist, err := tool.IsFileExisted(path)
-	if err != nil {
-		//路径等错误，返回err
-		return err
-	} else if exist == true {
+	if exist := tool.IsFileExisted(path); exist == true {
 		//存在则删除文件
-		ok, err := tool.IsFileExisted(path)
-		if err != nil {
-			return err
-		} else if ok == true {
+		if ok := tool.IsFileExisted(path); ok == true {
 			err := os.Remove(path)
 			if err != nil {
 				return err

@@ -6,7 +6,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/One-Studio/ptools v0.1.8
 	github.com/fatih/color v1.12.0 // indirect
-	github.com/gen2brain/go-unarr v0.1.1
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kr/text v0.2.0 // indirect

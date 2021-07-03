@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"HLAE-Studio/backend/tool"
 	"fmt"
+	tool "github.com/One-Studio/ptools/pkg"
 )
 
 ///// wails.go存放backend包对frontend细粒度交互的操作
@@ -58,9 +58,9 @@ func (a *App) noticeWarning(msg string) {
 //选择文件夹
 func (a *App) SelectDirectory() string {
 	directory := a.runtime.Dialog.SelectDirectory()
-	if ok, err := tool.IsFileExisted(directory); err != nil || !ok {
-		_ = tool.WriteFast("./cancel.txt", "取消安装" + err.Error())
-		a.noticeError("文件夹不存在或者未选择 " + err.Error())
+	if ok := tool.IsFileExisted(directory); !ok {
+		_ = tool.WriteFast("./cancel.txt", "取消安装")
+		a.noticeError("文件夹不存在或者未选择")
 		return ""
 	}
 
@@ -70,8 +70,8 @@ func (a *App) SelectDirectory() string {
 //选择文件
 func (a *App) SelectFile() string {
 	path := a.runtime.Dialog.SelectFile()
-	if ok, err := tool.IsFileExisted(path); err != nil || !ok {
-		a.noticeError("文件不存在或者未选择 " + err.Error())
+	if ok := tool.IsFileExisted(path); !ok {
+		a.noticeError("文件不存在或者未选择")
 		return ""
 	}
 
@@ -81,8 +81,8 @@ func (a *App) SelectFile() string {
 //选择文件，有标题
 func (a *App) SelectFileTitle(Title string) string {
 	path := a.runtime.Dialog.SelectFile(Title)
-	if ok, err := tool.IsFileExisted(path); err != nil || !ok {
-		a.noticeError("文件不存在或者未选择 " + err.Error())
+	if ok := tool.IsFileExisted(path); !ok {
+		a.noticeError("文件不存在或者未选择")
 		return ""
 	}
 
@@ -92,8 +92,8 @@ func (a *App) SelectFileTitle(Title string) string {
 //选择文件，有标题和过滤文件
 func (a *App) SelectFileTitleFilter(Title string, Filter string) string {
 	path := a.runtime.Dialog.SelectFile(Title, Filter)
-	if ok, err := tool.IsFileExisted(path); err != nil || !ok {
-		a.noticeError("文件不存在或者未选择 " + err.Error())
+	if ok := tool.IsFileExisted(path); !ok {
+		a.noticeError("文件不存在或者未选择")
 		return ""
 	}
 
