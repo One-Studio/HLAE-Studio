@@ -29,6 +29,8 @@
 
 # 下载
 
+[Better-GitHub-Api](https://api.upup.cool/get/hlae-studio)
+
 [GitHub](https://github.com/One-Studio/HLAE-Studio/releases)
 
 [天翼云盘](https://cloud.189.cn/t/qumieauIBJBf（访问码：0pxu）) （访问码：0pxu）
