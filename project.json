@@ -1,11 +1,11 @@
 {
  "name": "HLAE-Studio",
- "description": "Enter your project description",
+ "description": "HLAE第三方工具，解决HLAE和FFmpeg下载安装更新的问题",
  "author": {
   "name": "Purp1e",
   "email": "438518244@qq.com"
  },
- "version": "0.1.0",
+ "version": "1.1.0",
  "binaryname": "HLAE-Studio",
  "frontend": {
   "dir": "frontend",
@@ -14,7 +14,6 @@
   "bridge": "src",
   "serve": "yarn serve"
  },
- "tags": "",
  "WailsVersion": "",
  "CrossCompile": false,
  "Platform": "",

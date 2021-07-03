@@ -58,6 +58,8 @@ func (a *App) SetVar() {
 func (a *App) CheckUpdate() {
 	var err error
 	//我更新我自己
+	a.setProgress(0)
+	a.setLog("正在初始化")
 	if err = a.updateApp(); err != nil {
 		a.noticeError(err.Error())
 	}
@@ -69,6 +71,8 @@ func (a *App) CheckUpdate() {
 	}
 
 	//检查HLAE和FFmpeg安装情况
+	a.setProgress(10)
+	a.setLog("正在检查安装情况")
 	if err = a.checkState(); err != nil {
 		a.runtime.Events.Emit("SetLog", err)
 		log.Println(err)
@@ -76,6 +80,8 @@ func (a *App) CheckUpdate() {
 	}
 
 	//安装或者更新HLAE
+	a.setProgress(20)
+	a.setLog("正在下载/更新HLAE")
 	if a.cfg.HlaeState == false {
 		err = a.installHLAE()
 	} else {
@@ -88,6 +94,8 @@ func (a *App) CheckUpdate() {
 	}
 
 	//安装或更新FFmpeg
+	a.setProgress(60)
+	a.setLog("正在下载/更新FFmpeg")
 	if a.cfg.FFmpegState == false {
 		err = a.installFFmpeg()
 	} else {
@@ -105,6 +113,7 @@ func (a *App) CheckUpdate() {
 	a.cfg.Init = true
 	a.cfg.HlaeState = true
 	a.cfg.FFmpegState = true
+	_ = os.RemoveAll("./temp")
 	return
 }
 
@@ -160,6 +169,45 @@ func (a *App) SetOption(ok bool) {
 	a.cfg.Init = true
 }
 
+//获取本地HLAE版本号，如果未安装则返回空版本号
+func (a *App) getLocalHlaeVersion() (string, error) {
+	//识别已安装hlae，则检查更新
+	if ok := tool.IsFileExisted(a.cfg.HlaePath + "/hlae.exe"); !ok {
+		//本地文件不存在，返回空版本号
+		return "", nil
+	} else {
+		//获取本地版本号
+		if changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml"); err != nil {
+			return "", err
+		} else if version, err := api.ParseChangelog(changelog); err != nil {
+			return "", err
+		} else {
+			return version, nil
+		}
+	}
+}
+
+//获取最新better-github-api某工具的版本号
+func (a *App) getVersion(api string) (version string, err error) {
+	for count := 0;count < 5; count++ {
+		version, err = tool.GetHttpData(api + "/version")
+		if err != nil {
+			time.Sleep(2 * time.Second)
+		} else {
+			continue
+		}
+	}
+
+	return
+}
+
+//生成随机字符串
+func (a *App) randomString(n int) string  {
+	randBytes := make([]byte, n/2)
+	rand.Read(randBytes)
+	return fmt.Sprintf("%X", randBytes)
+}
+
 //安装HLAE
 func (a *App) installHLAE() error  {
 	//根据关联安装与否更新路径
@@ -201,70 +249,24 @@ func (a *App) installHLAE() error  {
 	return err
 }
 
-//获取本地HLAE版本号，如果未安装则返回空版本号
-func (a *App) getLocalHlaeVersion() (string, error) {
-	//识别已安装hlae，则检查更新
-	if ok := tool.IsFileExisted(a.cfg.HlaePath + "/hlae.exe"); !ok {
-		//本地文件不存在，返回空版本号
-		return "", nil
-	} else {
-		//获取本地版本号
-		if changelog, err := tool.ReadAll(a.cfg.HlaePath + "/changelog.xml"); err != nil {
-			return "", err
-		} else if version, err := api.ParseChangelog(changelog); err != nil {
-			return "", err
-		} else {
-			return version, nil
-		}
-	}
-}
-
-//获取最新better-github-api某工具的版本号
-func (a *App) getVersion(api string) (version string, err error) {
-	for count := 0;count < 5; count++ {
-		version, err = tool.GetHttpData(api + "/version")
-		if err != nil {
-			time.Sleep(2 * time.Second)
-		} else {
-			continue
-		}
-	}
-
-	return
-}
-
-//生成随机字符串
-func (a *App) randomString(n int) string  {
-	randBytes := make([]byte, n/2)
-	rand.Read(randBytes)
-	return fmt.Sprintf("%X", randBytes)
-}
-
-//安装FFmpeg
-func (a *App) installFFmpeg() error {
-	return a.updateFFmpeg()
-}
-
 //更新HLAE
 func (a *App) updateHLAE() error {
 	//获取版本
+	a.setProgress(30)
+	a.setLog("正在获取HLAE最新版本")
 	var localVersion, latestVersion string
 	var err error
-	if localVersion, err = a.getLocalHlaeVersion();err != nil {
-		//获取版本失败
+	localVersion = a.cfg.HlaeVersion
+	if latestVersion, err = a.getVersion(a.cfg.HlaeAPI); err != nil {
 		return err
 	}
-
-	if localVersion != "" {
-		if latestVersion, err = a.getVersion(a.cfg.HlaeAPI); err != nil {
-			return err
-		}
-		if localVersion == latestVersion {
-			return nil
-		}
+	if localVersion == latestVersion {
+		return nil
 	}
 
 	//下载HLAE安装包
+	a.setProgress(40)
+	a.setLog("正在下载HLAE安装包")
 	var filepath = "./temp/" + a.randomString(12)
 	if err = tool.DownloadFile(filepath, a.cfg.HlaeAPI); err != nil {
 		a.noticeError("HLAE下载失败")
@@ -275,6 +277,8 @@ func (a *App) updateHLAE() error {
 	var file = tool.GetFilePathFromDir(filepath, "hlae")
 
 	//解压
+	a.setProgress(50)
+	a.setLog("正在解压HLAE")
 	if err = tool.Decompress(file, "./temp/hlae"); err != nil {
 		return err
 	}
@@ -298,26 +302,32 @@ func (a *App) updateHLAE() error {
 	return nil
 }
 
+//安装FFmpeg
+func (a *App) installFFmpeg() error {
+	return a.updateFFmpeg()
+}
+
 //更新FFmpeg
 func (a *App) updateFFmpeg() error {
 	//获取版本
+	a.setProgress(70)
+	a.setLog("正在获取FFmpeg最新版本")
 	var localVersion, latestVersion string
 	var err error
-
 	localVersion = a.cfg.FFmpegVersion
-	if localVersion != "" {
-		if latestVersion, err = a.getVersion(a.cfg.FFmpegAPI); err != nil {
-			return err
-		}
-		if localVersion == latestVersion {
-			return nil
-		}
+	if latestVersion, err = a.getVersion(a.cfg.FFmpegAPI); err != nil {
+		return err
+	}
+	if localVersion == latestVersion {
+		return nil
 	}
 
-	//下载HLAE安装包
+	//下载FFmpeg安装包
+	a.setProgress(80)
+	a.setLog("正在下载FFmpeg")
 	var filepath = "./temp/" + a.randomString(12)
 	if err = tool.DownloadFile(filepath, a.cfg.FFmpegAPI); err != nil {
-		a.noticeError("HLAE下载失败")
+		a.noticeError("FFmpeg下载失败")
 		return err
 	}
 
@@ -325,6 +335,8 @@ func (a *App) updateFFmpeg() error {
 	var file = tool.GetFilePathFromDir(filepath, "ffmpeg")
 
 	//解压
+	a.setProgress(90)
+	a.setLog("正在解压FFmpeg")
 	if err = tool.Decompress(file, "./temp/ffmpeg"); err != nil {
 		return err
 	}
