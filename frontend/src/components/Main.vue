@@ -152,7 +152,7 @@ export default {
 <style scoped>
 
 /*Main组件容器*/
-.main-container {
+. main-container {
   margin: auto;
 }
 
@@ -188,7 +188,7 @@ export default {
 .logo {
   width: 45vw;
   height: auto;
-  margin-top: 24vw;
+  margin-top: 16vw;
   margin-bottom: 2.5vw;
   mso-border-shadow: yes;
   filter:drop-shadow(-25vw 25vw 100vw rgba(26,58,70,0.7));
