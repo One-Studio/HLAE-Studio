@@ -33,7 +33,7 @@
 
 [天翼云盘](https://cloud.189.cn/t/qumieauIBJBf（访问码：0pxu）) （访问码：0pxu）
 
-[蓝奏云](https://purp1e.lanzous.com/b01iace1c) 密码: 9s6r
+[蓝奏云](https://purp1e.lanzoui.com/b01iace1c) 密码:9s6r
 
 
 # 程序运行截图
